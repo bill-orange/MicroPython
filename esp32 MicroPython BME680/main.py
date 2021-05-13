@@ -1,5 +1,31 @@
-# Complete project details at https://RandomNerdTutorials.com/micropython-bme680-esp32-esp8266/
+import urequests
+import utime
+import _thread
+import machine
 
+
+def reset():
+     print("**** hard reset on lost connection")
+     machine.reset()
+    
+def connTest():
+    try:
+        #response = urequests.get("http://clients3.google.com/generate_204")
+        #your router below
+		response = urequests.get("http://192.168.0.1")
+        print(response.status_code,end =" " )
+        if response.status_code == 204:
+            print(" online")
+        elif response.status_code == 200:
+            print("portal")
+            time.sleep(1)         
+        else:
+            print("offline")
+            reset()
+    except OSError as e:
+        print('offline ** error')
+        reset()
+    
 def web_page():
   bme = BME680_I2C(i2c=i2c)
   
@@ -20,7 +46,8 @@ def web_page():
   <tr><td>Pressure</td><td><span class="sensor">""" + str(round(bme.pressure, 1)) + """ hPa</span></td></tr>
   <tr><td>Humidity</td><td><span class="sensor">""" + str(int((round(bme.humidity, 0)))) + """ %</span></td></tr>
   <tr><td>Gas</td><td><span class="sensor">""" + str(round(bme.gas/1000, 1)) + """ kOhms</span></td></tr>
-  <tr><td>Air Quality</td><td><span class="sensor">""" + str(bme.iqa()) + """</span></td></tr></body></html>"""
+  <tr><td>Air Quality</td><td><span class="sensor">""" + str(bme.iqa()) + """</span></td></tr>
+  <p style ="position: absolute; bottom: 5px" ><em>based mainly on the work of Rui Santos</em></body></html>"""
   
   return html
 
@@ -30,9 +57,25 @@ def web_page():
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind(('', 8002))
-s.listen(5)
+s.listen(3)
+start = time.ticks_ms()
+
+def conn_thread():
+    global start
+    while True:
+        #print(time.ticks_ms())
+        #print(start)
+        if time.ticks_diff(time.ticks_ms(),start) > 60000:
+            print("******* utime")
+            time.time()
+            start = time.ticks_ms()
+            connTest()      
+        
+        
+_thread.start_new_thread(conn_thread, ())
 
 while True:
+  
   try:
     if gc.mem_free() < 102000:
       gc.collect()
@@ -42,13 +85,14 @@ while True:
     request = conn.recv(1024)
     conn.settimeout(None)
     request = str(request)
-    print('Content = %s' % request)
+    #print('Content = %s' % request)
     response = web_page()
     conn.send('HTTP/1.1 200 OK\n')
     conn.send('Content-Type: text/html\n')
     conn.send('Connection: close\n\n')
     conn.sendall(response)
     conn.close()
+    
   except OSError as e:
     conn.close()
     print('Connection closed')
