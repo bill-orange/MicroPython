@@ -1,5 +1,5 @@
 # Complete project details at https://RandomNerdTutorials.com/micropython-bme680-esp32-esp8266/
-
+ 
 try:
   import usocket as socket
 except:
@@ -7,7 +7,7 @@ except:
   
 from time import sleep
 
-from machine import Pin, I2C
+from machine import Pin, SoftI2C
 import network
 
 import esp
@@ -19,12 +19,12 @@ gc.collect()
 from BME680 import *
 
 # ESP32 - Pin assignment
-i2c = I2C(scl=Pin(22), sda=Pin(21))
+i2c = SoftI2C(scl=Pin(22), sda=Pin(21))
 # ESP8266 - Pin assignment
 #i2c = I2C(scl=Pin(5), sda=Pin(4))
 
-ssid = 'testnet'
-password = 'tester12'
+ssid = 'your SSID'
+password = 'your PASSWORD'
 
 station = network.WLAN(network.STA_IF)
 
@@ -36,3 +36,5 @@ while station.isconnected() == False:
 
 print('Connection successful')
 print(station.ifconfig())
+start = time.ticks_ms()
+
