@@ -3,7 +3,6 @@ import utime
 import _thread
 import machine
 
-
 def reset():
      print("**** hard reset on lost connection")
      machine.reset()
@@ -11,8 +10,7 @@ def reset():
 def connTest():
     try:
         #response = urequests.get("http://clients3.google.com/generate_204")
-        #your router below
-		response = urequests.get("http://192.168.0.1")
+        response = urequests.get("http://192.168.0.1")
         print(response.status_code,end =" " )
         if response.status_code == 204:
             print(" online")
@@ -24,8 +22,21 @@ def connTest():
             reset()
     except OSError as e:
         print('offline ** error')
-        reset()
-    
+        try:
+            #response = urequests.get("http://clients3.google.com/generate_204")
+            response = urequests.get("http://192.168.0.1")
+            print(response.status_code,end =" " )
+            if response.status_code == 204:
+                print(" online_2")
+            elif response.status_code == 200:
+                print("portal_2")
+                time.sleep(1)         
+            else:
+                print("offline_2")
+                reset()
+        except OSError as e:
+            print('offline_ ** error')
+            reset()
 def web_page():
   bme = BME680_I2C(i2c=i2c)
   
@@ -65,13 +76,14 @@ def conn_thread():
     while True:
         #print(time.ticks_ms())
         #print(start)
+        if gc.mem_free() < 102000:
+            gc.collect()
         if time.ticks_diff(time.ticks_ms(),start) > 60000:
             print("******* utime")
-            time.time()
-            start = time.ticks_ms()
-            connTest()      
-        
-        
+            #time.time()
+            connTest() 
+            start = time.ticks_ms()    
+             
 _thread.start_new_thread(conn_thread, ())
 
 while True:
