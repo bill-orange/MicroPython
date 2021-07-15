@@ -104,7 +104,10 @@ class Adafruit_BME680:
   def temperature(self):
     self._perform_reading()
     calc_temp = (((self._t_fine * 5) + 128) / 256)
-    return calc_temp / 100
+    calc_temp = calc_temp / 100
+    calc_temp = (calc_temp * 1.8) + 32
+    calc_temp = round (calc_temp,1) 
+    return calc_temp
   @property
   def pressure(self):
     self._perform_reading()
@@ -174,7 +177,8 @@ class Adafruit_BME680:
   def gas_score(self,gas):
     gas_lower_limit = 5000
     #gas_upper_limit = 120000
-    gas_upper_limit = 250000
+    gas_upper_limit = 60000
+    #gas_upper_limit = 250000
     gas_score = (0.75 / (gas_upper_limit - gas_lower_limit) * gas - (gas_lower_limit * (0.75 / (gas_upper_limit - gas_lower_limit)))) * 100.00
     if gas_score > 75:
         gas_score = 75
