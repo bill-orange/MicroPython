@@ -3,6 +3,7 @@ import utime
 import _thread
 import machine
 
+
 def reset():
      print("**** hard reset on lost connection")
      machine.reset()
@@ -10,7 +11,8 @@ def reset():
 def connTest():
     try:
         #response = urequests.get("http://clients3.google.com/generate_204")
-        response = urequests.get("http://192.168.0.1")
+        #response = urequests.get("http://192.168.0.1")
+        response = urequests.get("http://orangecaweather.duckdns.org/weather/")
         print(response.status_code,end =" " )
         if response.status_code == 204:
             print(" online")
@@ -22,21 +24,8 @@ def connTest():
             reset()
     except OSError as e:
         print('offline ** error')
-        try:
-            #response = urequests.get("http://clients3.google.com/generate_204")
-            response = urequests.get("http://192.168.0.1")
-            print(response.status_code,end =" " )
-            if response.status_code == 204:
-                print(" online_2")
-            elif response.status_code == 200:
-                print("portal_2")
-                time.sleep(1)         
-            else:
-                print("offline_2")
-                reset()
-        except OSError as e:
-            print('offline_ ** error')
-            reset()
+        reset()
+    
 def web_page():
   bme = BME680_I2C(i2c=i2c)
   
@@ -53,14 +42,14 @@ def web_page():
   </style></head><body><h1>KI6EPW/AB6OR Environment Sensor</h1>
   </style></head><body><h1>ESP with BME680</h1>
   <table><tr><th>MEASUREMENT</th><th>VALUE</th></tr>  
-  <tr><td>Temp. Fahrenheit</td><td><span class="sensor">""" + str(round(((bme.temperature) * (9/5) + 32), 1))  + """ &degF</span></td></tr>
+  <tr><td>Temp. Fahrenheit</td><td><span class="sensor">""" + str(bme.temperature)  + """ &degF</span></td></tr>
   <tr><td>Pressure</td><td><span class="sensor">""" + str(round(bme.pressure, 1)) + """ hPa</span></td></tr>
   <tr><td>Humidity</td><td><span class="sensor">""" + str(int((round(bme.humidity, 0)))) + """ %</span></td></tr>
   <tr><td>Gas</td><td><span class="sensor">""" + str(round(bme.gas/1000, 1)) + """ kOhms</span></td></tr>
   <tr><td>Air Quality</td><td><span class="sensor">""" + str(bme.iqa()) + """</span></td></tr>
   <p style ="position: absolute; bottom: 5px" ><em>based mainly on the work of Rui Santos</em></body></html>"""
   
-  return html
+  return html 
 
   #<tr><td>Temp. Celsius</td><td><span class="sensor">""" + str(round(bme.temperature, 1)) + """ &degC</span></td></tr>
   #<tr><td>Humidity Score</td><td><span class="sensor">""" + str(round(bme.humidity_score(bme.humidity), 1)) + """</span></td></tr>
@@ -74,22 +63,23 @@ start = time.ticks_ms()
 def conn_thread():
     global start
     while True:
-        #print(time.ticks_ms())
+        if gc.mem_free() < 80000:
+		  gc.collect()
+		#print(time.ticks_ms())
         #print(start)
-        if gc.mem_free() < 102000:
-            gc.collect()
         if time.ticks_diff(time.ticks_ms(),start) > 60000:
             print("******* utime")
-            #time.time()
-            connTest() 
-            start = time.ticks_ms()    
-             
+            time.time()
+            start = time.ticks_ms()
+            connTest()      
+        
+        
 _thread.start_new_thread(conn_thread, ())
 
 while True:
   
   try:
-    if gc.mem_free() < 102000:
+    if gc.mem_free() < 80000:
       gc.collect()
     conn, addr = s.accept()
     conn.settimeout(3.0)
